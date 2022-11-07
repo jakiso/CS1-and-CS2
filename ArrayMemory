@@ -1,0 +1,464 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include "LonelyPartyArray.h"
+
+LonelyPartyArray *createLonelyPartyArray(int num_fragments, int fragment_length)
+{
+	int i;
+	int e;
+	LPA *party = NULL;
+	// Dynamically allocate space for new LPA struct
+	party = malloc(sizeof(LPA));
+	// Initialize members of struct to arguments past
+	party->num_fragments = num_fragments;
+	party->fragment_length = fragment_length;
+	// Allocating fragment_sizes and fragments
+	party->fragment_sizes = malloc(sizeof(int) * num_fragments);
+	party->fragments = malloc(sizeof(int *) * fragment_length);
+
+	// Checks if fragment_length arguement is less than 0
+	// Returns null if there is arguement less than 0
+	if (fragment_length <= 0 || num_fragments <= 0)
+	{
+		free(party->fragment_sizes);
+		free(party->fragments);
+		return NULL;
+	}
+	party->num_active_fragments = 0;
+	party->size = 0;
+
+	// Set all values of fragment_sizes to null
+	for (i = 0; i <= fragment_length - 1; i++)
+	{
+		party->fragments[i] = NULL;
+	}
+	// Set all values of fragments_length to 0
+	for (i = 0; i <= num_fragments - 1; i++)
+	{
+		party->fragment_sizes[i] = 0;
+	}
+
+	// Print capacity and fragments
+	printf("-> A new LonelyPartyArray has emerged from the void.");
+	printf(" (capacity: %d, fragments: %d)\n", num_fragments * fragment_length, num_fragments);
+	return party;
+}
+
+LonelyPartyArray *destroyLonelyPartyArray(LonelyPartyArray *party)
+{
+	int i;
+	// Checks to see if party is valid to use
+
+	if (party == NULL)
+	{
+		return NULL;
+	}
+
+	// Deallocate individual fragments and set it to null
+	for(i = 0; i < party->num_fragments; i++)
+	{
+		if(party->fragment_sizes[i] > 0)
+		{
+			free(party->fragments[i]);
+			party->fragments[i] = NULL;
+		}
+	}
+
+	// Deallocate fragment_sizes and set it to null
+	free(party->fragment_sizes);
+	party->fragment_sizes = NULL;
+	// Deallocate fragments (pointer array) and set it to null
+	free(party->fragments);
+	party->fragments = NULL;
+	// Deallocate party and set it to null
+	free(party);
+	party = NULL;
+	printf("-> The LonelyPartyArray has returned to the void.\n");
+	return NULL;
+}
+
+LonelyPartyArray *cloneLonelyPartyArray(LonelyPartyArray *party)  // optional (bonus)
+{
+	return NULL;
+}
+
+int set(LonelyPartyArray *party, int index, int key)
+{
+	int j;
+	// f_placement is fragment placement
+	int f_placement;
+	// a_placement is where in the fragments[][] array is the key placed
+	int a_placement;
+	// Checks if party is null, return failure
+
+	if (party == NULL)
+	{
+		printf("-> Bloop! NULL pointer detected in set().\n");
+		return LPA_FAILURE;
+	}
+
+	// Set f_placement to fragments and a_placement the offset in fragments
+	f_placement = index / party->fragment_length;
+	a_placement = index % party->fragment_length;
+
+	// Checks to see if index surpasses the bounds of fragments array
+	if (index < 0 || index > party->num_fragments * party->fragment_length - 1)
+	{
+		printf("-> Bloop! Invalid access in set(). ");
+		printf("(index: %d, fragment: %d,", index, f_placement);
+		printf(" offset: %d)\n", a_placement);
+		return LPA_FAILURE;
+	}
+
+	// Allocates new fragments array and sets values to unused if it is null
+	if (party->fragments[f_placement] == NULL)
+	{
+		(party->fragments)[f_placement] = (int *) malloc(sizeof(int) * party->fragment_length);
+		printf("-> Spawned fragment %d.", f_placement);
+		printf(" (capacity: %d,", party->fragment_length);
+		printf(" indices: %d..", party->fragment_length * f_placement);
+		printf("%d)\n", party->fragment_length * f_placement + party->fragment_length-1);
+
+		for (j = 0; j <= party->fragment_length - 1; j++ )
+		{
+			party->fragments[f_placement][j] = UNUSED;
+		}
+
+		// Increment appropiate members and place key inside fragments array
+		party->fragment_sizes[f_placement] += 1;
+		party->num_active_fragments += 1;
+		party->fragments[f_placement][a_placement] = key;
+		party->size += 1;
+		return LPA_SUCCESS;
+	}
+
+	// Checks to see if fragment is allocated but not used
+	if (party->fragments[f_placement][a_placement] == UNUSED)
+	{
+		// Places key in array and increments appropiate members
+		party->fragments[f_placement][a_placement] = key;
+		party->fragment_sizes[f_placement] += 1;
+		party->size += 1;
+	}
+
+	// Replaces fragments [][] if it is already used
+	if (party->fragments[f_placement][a_placement] != UNUSED)
+	{
+			party->fragments[f_placement][a_placement] = key;
+	}
+	return LPA_SUCCESS;
+}
+
+int get(LonelyPartyArray *party, int index)
+{
+	// fragplace is fragment placement
+	int fragplace;
+	// arrayplace is where in the fragments[][] array is the key placed
+	int arrayplace;
+	int value;
+
+	// Checks to see if party pointer is null
+	if (party == NULL)
+	{
+		printf("-> Bloop! NULL pointer detected in get().\n");
+		return LPA_FAILURE;
+	}
+
+	// Set fragplace to fragments and arrayplace the offset in fragments
+	fragplace = index / party->fragment_length;
+	arrayplace = index % party->fragment_length;
+
+	// Checks to see if index surpasses the bounds of fragments array
+	if (index < 0 || index > party->num_fragments * party->fragment_length - 1)
+	{
+		printf("-> Bloop! Invalid access in get(). ");
+		printf("(index: %d, fragment: %d,", index, fragplace);
+		printf(" offset: %d)\n", arrayplace);
+		return LPA_FAILURE;
+	}
+
+	// Null is a unused value so it returns unused
+	if (party->fragments[fragplace] == NULL )
+	{
+		return UNUSED;
+	}
+
+	// Set value to the value of fragments [][]
+	value = party->fragments[fragplace][arrayplace];
+	return value;
+}
+
+int delete(LonelyPartyArray *party, int index)
+{
+	// c_fragment is current fragment
+	int c_fragment;
+	int offset;
+	int hasvalue;
+
+	// Checks to see if party pointer is null
+	if (party == NULL)
+	{
+		printf("-> Bloop! NULL pointer detected in delete().\n");
+		return LPA_FAILURE;
+	}
+
+	// Sets current fragment and offset
+	c_fragment = index / party->fragment_length;
+	offset = index % party->fragment_length;
+
+	// Checks to see if index surpasses the bounds of fragments array
+	if (index < 0 || index > party->num_fragments * party->fragment_length - 1)
+	{
+		printf("-> Bloop! Invalid access in delete(). ");
+		printf("(index: %d, fragment: %d,", index, c_fragment);
+		printf(" offset: %d)\n", offset);
+		return LPA_FAILURE;
+	}
+
+	// Gets value of index
+	hasvalue = get(party, index);
+
+	// Checks to see if the value is null, if it is null
+	// there is no need to delete
+	if (hasvalue == UNUSED)
+	{
+		return LPA_FAILURE;
+	}
+
+	// If the value is valid, decrease appropiate members and sets
+	// the appropiate fragment to unused
+	if (hasvalue != UNUSED || hasvalue != LPA_FAILURE )
+	{
+		party->fragments[c_fragment][offset] = UNUSED;
+		party->size -= 1;
+		party->fragment_sizes[c_fragment] -= 1;
+
+		// Checks to see if fragment is being used
+		if (party->fragment_sizes[c_fragment] == 0)
+		{
+			// Deallocates fragment if party is not used and set it to null
+			printf("-> Deallocated fragment %d. ", c_fragment);
+			printf("(capacity: %d,", party->fragment_length);
+			printf(" indices: %d..", party->fragment_length * c_fragment);
+			printf("%d)\n",  party->fragment_length * c_fragment + party->fragment_length - 1);
+			free(party->fragments[c_fragment]);
+			party->fragments[c_fragment] = NULL;
+			party->num_active_fragments -= 1;
+	}
+}
+	return LPA_SUCCESS;
+}
+
+int containsKey(LonelyPartyArray *party, int key)
+{
+	int k;
+	int y;
+
+	// Checks to see if party pointer is null
+	if (party == NULL)
+	{
+		return 0;
+	}
+
+	// Linear search through the active fragments to see see if key is in it
+	for(k = 0; k <= party->num_fragments - 1; k++)
+	{
+		if(party->fragment_sizes[k] > 0)
+		{
+			for (y = 0; y <= party->fragment_length; y++)
+			{
+				if (party->fragments[k][y] == key)
+				{
+					return 1;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+int isSet(LonelyPartyArray *party, int index)
+{
+	int issetfragment;
+	int issetoffset;
+	// Checks to see if party pointer is null
+
+	if(party == NULL)
+	{
+		return 0;
+	}
+
+	issetoffset = index % party->fragment_length;
+	issetfragment = index / party->fragment_length;
+
+	// Checks to see if index surpasses the bounds of fragments array
+	if (index < 0 || index > party->num_fragments * party->fragment_length - 1)
+	{
+		return LPA_FAILURE;
+	}
+
+	// Checks to see if index is used
+	if (party->fragments[issetfragment][issetoffset] != UNUSED)
+		{
+			return 1;
+		}
+	else
+	{
+		return 0;
+	}
+}
+
+int printIfValid(LonelyPartyArray *party, int index)
+{
+	int printvalue;
+
+	// Checks to see if party pointer is null
+	if (party == NULL)
+	{
+		return LPA_FAILURE;
+	}
+
+	// Checks to see if index surpasses the bounds of fragments array
+	if (index < 0 || index > party->num_fragments * party->fragment_length - 1)
+	{
+		return LPA_FAILURE;
+	}
+	printvalue = get(party, index);
+
+	// Checks to see if value is valid to print
+	if (printvalue != UNUSED)
+	{
+		printf("%d\n", printvalue);
+		return LPA_SUCCESS;
+	}
+
+	// If value is not valid return failure
+	if( printvalue == UNUSED)
+	{
+		return LPA_FAILURE;
+	}
+}
+
+LonelyPartyArray *resetLonelyPartyArray(LonelyPartyArray *party)
+{
+	int f;
+
+	// Checks to see if party pointer is null
+	if (party == NULL)
+	{
+		printf("-> Bloop! NULL pointer detected in resetLonelyPartyArray().\n");
+		return NULL;
+	}
+
+	for (f = 0; f <= party->num_fragments - 1; f++)
+	{
+		// Deallocates fragments that are active
+		if (party->fragment_sizes[f] > 0)
+		{
+			free (party->fragments[f]);
+			party->fragments[f] = NULL;
+			party->fragment_sizes[f] = 0;
+		}
+	}
+
+	// Sets members to 0 since there are no active members
+	party->num_active_fragments = 0;
+	party->size = 0;
+	printf("-> The LonelyPartyArray has returned to its nascent state. ");
+	printf("(capacity: %d, ", party->num_fragments * party->fragment_length);
+	printf("fragments: %d)\n", party->num_fragments);
+	return party;
+}
+
+int getSize(LonelyPartyArray *party)
+{
+	int sizeofLPA;
+
+	// Checks to see if party pointer is null
+	if (party == NULL)
+	{
+		return -1;
+	}
+
+	// Returns size of lpa
+	sizeofLPA = party->size;
+	return sizeofLPA;
+}
+
+int getCapacity(LonelyPartyArray *party)
+{
+	int capacity = 0;
+
+	// Checks to see if party pointer is null
+	if (party == NULL)
+	{
+		return -1;
+	}
+
+	// Returns capacity
+	capacity = party->num_fragments * party->fragment_length;
+	return capacity;
+}
+
+int getAllocatedCellCount(LonelyPartyArray *party)
+{
+	int allocateCC;
+
+		// Checks to see if party pointer is null
+	if (party == NULL)
+	{
+		return -1;
+	}
+
+	// Returns number of cells that are allocated in fragments
+	allocateCC = party->num_active_fragments * party->fragment_length;
+	return allocateCC;
+}
+
+long long unsigned int getArraySizeInBytes(LonelyPartyArray *party)
+{
+	long long unsigned int arraybytes;
+
+		// Checks to see if party pointer is null
+	if (party == NULL)
+	{
+		return 0;
+	}
+
+	// Casts getCapacity() to a long long unsigned int
+	arraybytes = (long long unsigned int)(getCapacity(party) * sizeof(int));
+	return arraybytes;
+}
+
+long long unsigned int getCurrentSizeInBytes(LonelyPartyArray *party)
+{
+	long long unsigned int totalbytes = 0;
+	int i;
+	int j;
+
+	if (party == NULL)
+	{
+		return 0;
+	}
+
+	// Casts size of the pointer of LPA zise long long unsigned int and add it to totalbytes
+	totalbytes += (long long unsigned int) sizeof(LPA*);
+	// Casts the struct of lpa size to long long unsigned int and it to totalbytes
+	totalbytes += (long long unsigned int) sizeof(LPA);
+
+	for (i = 0; i <= party->num_fragments - 1; i++)
+	{
+		// Cast sizes of each array to long long unsigned int and add it to totalbytes
+		totalbytes += (long long unsigned int) sizeof(party->fragment_sizes[i]);
+		totalbytes += (long long unsigned int) sizeof(party->fragments[i]);
+		if (party->fragment_sizes[i] > 0)
+		{
+			for (j = 0; j <= party->fragment_length - 1; j++)
+			 	{
+					// Cast active fragments size to long long unsigned int and add it to totalbytes
+					totalbytes += (long long unsigned int) sizeof(party->fragments[i][j]);
+				}
+		}
+	}
+	return totalbytes;
+}
