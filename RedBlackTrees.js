@@ -1,7 +1,3 @@
-/* Name: Jade Soto 
-   Class: COP3503 Fall 2021 
-   Programming Assignment: 2 */
-
 // Import libraries
 package addressbook;
 import java.util.*;
