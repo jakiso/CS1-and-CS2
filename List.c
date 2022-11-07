@@ -42,7 +42,7 @@ Node *destroy_list(Node *head)
 	free(head);
 	return NULL;
 }
-
+// Destroy object
 ListyInt *destroyListyInt(ListyInt *listy)
 {
 	if (listy == NULL)
